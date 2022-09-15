@@ -49,44 +49,18 @@ next();
     res.status(403).send({message:"you are nont admin"})
   }
 }
-/******Send email when user booking appoinment********/
-// const emailOptions = {
-//   auth: {
-//     api_key:process.env.EMAIL_SENDER_KEY
-//   }
-// }
-// const emailClient = nodemailer.createTransport(sgTransport(emailOptions));
 
-// function sendAppoinmentEmail(booking){
-// const{patientEmail,patientName,treatment,date,slot}=booking;
-// const email = {
-//   from: process.env.EMAIL_SENDER,
-//   to: patientEmail,
-//   subject: `Your Appoinment for ${treatment} is on ${date} at ${slot}`,
-//   text: `Your Appoinment for ${treatment} is on ${date} at ${slot}`,
-//   html: `
-//   <div>
-//   <h2>Hello ${patientName}</h2>
-//   <h3>Your appoinment ${treatment} is confirmed</h3>
-//   <p>Looking forward to Seeing You ${date} at ${slot}</p>
-//   <h3>Our Address:Dhaka</h3>
-//   <p>Bangladesh</p>
-//   </div>
-//   `
-// };
-// emailClient.sendMail(email, function(err, info){
-//   if (err ){
-//     console.log(err);
-//   }
-//   else {
-//     console.log('Message sent:',info);
-//   }
-// });
-// }
-
-
-
-
+ /******get user information sent backend********/
+ app.post('/users',async(req,res)=>{
+  const user = req.body;
+  const result = await userCollection.insertOne(user );
+  res.send(result)
+})
+/******get all user********/
+app.get('/user',async(req,res)=>{
+  const user= await userCollection.find().toArray();
+  res.send(user)
+})
 /******get all service********/
 app.get('/services',async(req,res)=>{
   const query = {};
@@ -115,7 +89,6 @@ app.delete('/doctor/:email',verifyJWT,verifyAdmin,async(req,res)=>{
 
 
 /******update user********/
-
 app.put('/user/:email',async(req,res)=>{
   const email = req.params.email;
   const user = req.body;
