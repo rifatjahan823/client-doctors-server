@@ -118,11 +118,7 @@ app.get('/admin/:email',async(req,res)=>{
   const isAdmin =user.role==='admin';
   res.send({admin:isAdmin})
 })
-/******get all user********/
-app.get('/user',verifyJWT,async(req,res)=>{
-  const user= await userCollection.find().toArray();
-  res.send(user)
-})
+
 
 /******get user booking information sent backend********/
 app.post('/booking',async(req,res)=>{
@@ -136,6 +132,11 @@ app.post('/booking',async(req,res)=>{
   const result = await bookingCollection.insertOne(booking);
   sendAppoinmentEmail(booking)
   return res.send({success:true,result});
+})
+/******get all booking********/
+app.get('/allbooking',verifyJWT,async(req,res)=>{
+  const booking= await  bookingCollection.find().toArray();
+  res.send(booking)
 })
 
 /******show per user appoinment by email********/
@@ -151,15 +152,13 @@ app.get('/booking',verifyJWT,async(req,res)=>{
   }
 })
 
-/******booking detauls by id per user********/
+/******booking details by id per user********/
 app.get('/booking/:id',verifyJWT,async(req,res)=>{
   const id= req.params.id;
   const query={_id:ObjectId(id)};
   const booking = await bookingCollection.findOne(query);
   res.send(booking)
 })
-
-
 
 /******remove available time if user booking it ********/
 app.get('/available',async(req,res)=>{
