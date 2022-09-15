@@ -3,9 +3,8 @@ const cors= require('cors');
 const jwt = require('jsonwebtoken');
 var nodemailer = require('nodemailer');
 require('dotenv').config();
-var sgTransport = require('nodemailer-sendgrid-transport');
+// var sgTransport = require('nodemailer-sendgrid-transport');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -15,7 +14,7 @@ app.use(express.json());
 
 
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.mpku2.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.jwhbn04.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
  async function run(){
@@ -25,7 +24,6 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
       const bookingCollection = client.db("doctros-portal").collection('bookings');
       const userCollection = client.db("doctros-portal").collection('users');
       const doctorsCollection = client.db("doctros-portal").collection('doctors');
-      const paymentCollection = client.db("doctros-portal").collection('payment');
 
 /******verify JWT********/
 function verifyJWT(req,res,next){
@@ -54,54 +52,40 @@ next();
   }
 }
 /******Send email when user booking appoinment********/
-const emailOptions = {
-  auth: {
-    api_key:process.env.EMAIL_SENDER_KEY
-  }
-}
-const emailClient = nodemailer.createTransport(sgTransport(emailOptions));
+// const emailOptions = {
+//   auth: {
+//     api_key:process.env.EMAIL_SENDER_KEY
+//   }
+// }
+// const emailClient = nodemailer.createTransport(sgTransport(emailOptions));
 
-function sendAppoinmentEmail(booking){
-const{patientEmail,patientName,treatment,date,slot}=booking;
-const email = {
-  from: process.env.EMAIL_SENDER,
-  to: patientEmail,
-  subject: `Your Appoinment for ${treatment} is on ${date} at ${slot}`,
-  text: `Your Appoinment for ${treatment} is on ${date} at ${slot}`,
-  html: `
-  <div>
-  <h2>Hello ${patientName}</h2>
-  <h3>Your appoinment ${treatment} is confirmed</h3>
-  <p>Looking forward to Seeing You ${date} at ${slot}</p>
-  <h3>Our Address:Dhaka</h3>
-  <p>Bangladesh</p>
-  <a href='https://web.programming-hero.com/'>Unsubscribe</a>
-  </div>
-  `
-};
-emailClient.sendMail(email, function(err, info){
-  if (err ){
-    console.log(err);
-  }
-  else {
-    console.log('Message sent:',info);
-  }
-});
-}
+// function sendAppoinmentEmail(booking){
+// const{patientEmail,patientName,treatment,date,slot}=booking;
+// const email = {
+//   from: process.env.EMAIL_SENDER,
+//   to: patientEmail,
+//   subject: `Your Appoinment for ${treatment} is on ${date} at ${slot}`,
+//   text: `Your Appoinment for ${treatment} is on ${date} at ${slot}`,
+//   html: `
+//   <div>
+//   <h2>Hello ${patientName}</h2>
+//   <h3>Your appoinment ${treatment} is confirmed</h3>
+//   <p>Looking forward to Seeing You ${date} at ${slot}</p>
+//   <h3>Our Address:Dhaka</h3>
+//   <p>Bangladesh</p>
+//   </div>
+//   `
+// };
+// emailClient.sendMail(email, function(err, info){
+//   if (err ){
+//     console.log(err);
+//   }
+//   else {
+//     console.log('Message sent:',info);
+//   }
+// });
+// }
 
-/******payment get way to send payment/CheckOutForm.js********/
-app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
-  const service = req.body;
-  console.log(service)
-  const price = service.price;
-  const amount = price*100;
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount : amount,
-    currency: 'usd',
-    payment_method_types:['card']
-  });
-  res.send({clientSecret: paymentIntent.client_secret})
-});
 
 
 
@@ -131,16 +115,6 @@ app.delete('/doctor/:email',verifyJWT,verifyAdmin,async(req,res)=>{
   return res.send(result);
 })
 
-
- /**
-     * API Naming Convention
-     * app.get('/booking') // get all bookings in this collection. or get more than one or by filter
-     * app.get('/booking/:id') // get a specific booking 
-     * app.post('/booking') // add a new booking
-     * app.patch('/booking/:id) //
-     * app.put('/booking/:id) //update user
-     * app.delete('/booking/:id) //
-    */
 
 /******update user********/
 
@@ -213,52 +187,6 @@ app.get('/booking/:id',verifyJWT,async(req,res)=>{
   const booking = await bookingCollection.findOne(query);
   res.send(booking)
 })
-
-/******store payment********/
-app.patch('/booking/:id',verifyJWT,async(req,res)=>{
-  const id= req.params.id;
-  const payment = req.body;
-  const query={_id:ObjectId(id)};
-  const updatedDoc = {
-    $set:{
-      paid:true,
-      transactionId:payment.transactionId,
-    }
-  } 
-  const updatedBooking = await bookingCollection.updateOne(query,updatedDoc);
-  const result = await paymentCollection.insertOne(payment );
-  res.send(updatedDoc)
-})
-
-
-/******Send email when user payment********/
-function sendPaymentEmail(booking){
-const{patientEmail,patientName,treatment,date,slot}=booking;
-const email = {
-  from: process.env.EMAIL_SENDER,
-  to: patientEmail,
-  subject: `Your have receved your payment for ${treatment} is on ${date} at ${slot}`,
-  text: `Your Payment for ${treatment} is on ${date} at ${slot}`,
-  html: `
-  <div>
-  <h2>Hello ${patientName}</h2>
-  <h3>Your appoinment ${treatment} is confirmed</h3>
-  <p>Looking forward to Seeing You ${date} at ${slot}</p>
-  <h3>Our Address:Dhaka</h3>
-  <p>Bangladesh</p>
-  <a href='https://web.programming-hero.com/'>Unsubscribe</a>
-  </div>
-  `
-};
-emailClient.sendMail(email, function(err, info){
-  if (err ){
-    console.log(err);
-  }
-  else {
-    console.log('Message sent:',info);
-  }
-});
-}
 
 
 
