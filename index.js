@@ -1,9 +1,7 @@
 const express = require('express');
 const cors= require('cors');
 const jwt = require('jsonwebtoken');
-var nodemailer = require('nodemailer');
 require('dotenv').config();
-// var sgTransport = require('nodemailer-sendgrid-transport');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
