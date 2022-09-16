@@ -87,7 +87,6 @@ app.delete('/doctor/:email',verifyJWT,verifyAdmin,async(req,res)=>{
   return res.send(result);
 })
 
-
 /******update user********/
 app.put('/user/:email',async(req,res)=>{
   const email = req.params.email;
@@ -101,27 +100,9 @@ app.put('/user/:email',async(req,res)=>{
    const token=jwt.sign({email:email},process.env.ACCESS_TOKEN_SECRET);
   res.send({result,token:token});
 })
-// //ADMIN ROLL
-// app.put('/user/admin/:email',verifyJWT,verifyAdmin,async(req,res)=>{
-//   const email = req.params.email;
-//     const filter = {email:email};
-//     const updateDoc = {
-//       $set:{role:"admin"},
-//     };
-//     const result = await userCollection.updateOne(filter, updateDoc);
-//     res.send(result);
- 
-// })
-// app.get('/admin/:email',async(req,res)=>{
-//   const email = req.params.email;
-//   const user = await userCollection.findOne({email:email});
-//   const isAdmin =user.role==='admin';
-//   res.send({admin:isAdmin})
-// })
 //ADMIN ROLL
-app.put('/verifyUsers',verifyAdmin,async(req,res)=>{
-  const email = req.body.email;
-  console.log(email)
+app.put('/user/admin/:email',verifyJWT,verifyAdmin,async(req,res)=>{
+  const email = req.params.email;
     const filter = {email:email};
     const updateDoc = {
       $set:{role:"admin"},
@@ -130,13 +111,13 @@ app.put('/verifyUsers',verifyAdmin,async(req,res)=>{
     res.send(result);
  
 })
+app.get('/admin/:email',async(req,res)=>{
+  const email = req.params.email;
+  const user = await userCollection.findOne({email:email});
+  const isAdmin =user.role==='admin';
+  res.send({admin:isAdmin})
+})
 
- app.get('/admin',verifyAdmin, async(req,res)=>{
-   const email = req.query.email;
-   const user = await userCollection.findOne({email:email});
-   const isAdmin =user.role==='admin';
-   res.send({admin:isAdmin})
- })
 
 /******get user booking information sent backend********/
 app.post('/booking',async(req,res)=>{
