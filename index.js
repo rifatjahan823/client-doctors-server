@@ -119,7 +119,7 @@ app.get('/admin/:email',async(req,res)=>{
   res.send({admin:isAdmin})
 })
 /******delete user by email********/
-app.delete('/removeuser/:email',verifyAdmin,async(req,res)=>{
+app.delete('/removeuser/:email',verifyAdmin,verifyAdmin,async(req,res)=>{
   const email = req.params.email;
   const query = {email:email}
   const result = await userCollection.deleteOne(query);
