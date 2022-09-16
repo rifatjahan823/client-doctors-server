@@ -118,13 +118,7 @@ app.get('/admin/:email',async(req,res)=>{
   const isAdmin =user.role==='admin';
   res.send({admin:isAdmin})
 })
-/******delete user by email********/
-app.delete('/removeuser/:email',async(req,res)=>{
-  const email = req.params.email;
-  const query = {email:email}
-  const result = await userCollection.deleteOne(query);
-  return res.send(result);
-})
+
 
 /******get user booking information sent backend********/
 app.post('/booking',async(req,res)=>{
