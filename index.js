@@ -23,31 +23,61 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
       const doctorsCollection = client.db("doctros-portal").collection('doctors');
 
 /******verify JWT********/
-function verifyJWT(req,res,next){
-  const authHeader =req.headers.authorization;
-  if(!authHeader){
-    return res.status(401).send({message:'authorization'})
-  }
-  const token =authHeader.split(' ')[1];
-  // verify a token symmetric
-jwt.verify(token,process.env.ACCESS_TOKEN_SECRET, function(err, decoded) {
-  if(err){
-    return res.status(403).send({message:'Forbiden access'})
-  }
-  req.decoded=decoded;
-  next();
-});
-}
+// function verifyJWT(req,res,next){
+//   const authHeader =req.headers.authorization;
+//   if(!authHeader){
+//     return res.status(401).send({message:'authorization'})
+//   }
+//   const token =authHeader.split(' ')[1];
+//   // verify a token symmetric
+// jwt.verify(token,process.env.ACCESS_TOKEN_SECRET, function(err, decoded) {
+//   if(err){
+//     return res.status(403).send({message:'Forbiden access'})
+//   }
+//   req.decoded=decoded;
+//   next();
+// });
+// }
 /******verifyAddmin ********/
+// const verifyAdmin=async(req,res,next)=>{
+//   const requerster = req.decoded.email;
+//   const requersterAccount = await userCollection.findOne({email:requerster});
+//   if(requersterAccount.role==='admin'){
+// next();
+//   }else{
+//     res.status(403).send({message:"you are nont admin"})
+//   }
+// }
+
+// /******verifyAddmin ********/
 const verifyAdmin=async(req,res,next)=>{
-  const requerster = req.decoded.email;
+  const requerster = req.query.email;
   const requersterAccount = await userCollection.findOne({email:requerster});
-  if(requersterAccount.role==='admin'){
+  if(requersterAccount?.role==='admin'){
 next();
   }else{
-    res.status(403).send({message:"you are nont admin"})
+    res.status(403).send({message:"you are not admin"})
   }
 }
+//ADMIN ROLL
+app.put('/user/admin/:email',verifyAdmin,async(req,res)=>{
+  const email = req.params.email;
+    const filter = {email:email};
+    const updateDoc = {
+      $set:{role:"admin"},
+    };
+    const result = await userCollection.updateOne(filter, updateDoc);
+    res.send(result);
+ 
+})
+app.get('/admin/:email',async(req,res)=>{
+  const email = req.params.email;
+  const user = await userCollection.findOne({email:email});
+  const isAdmin =user.role==='admin';
+  res.send({admin:isAdmin})
+})
+
+
 
  /******get user information sent backend********/
  app.post('/users',async(req,res)=>{
@@ -69,17 +99,17 @@ app.get('/services',async(req,res)=>{
 })
 
 /******get add doctor-information from page dashbord/adddoctor information sent backend********/
-app.post('/doctor',verifyJWT,verifyAdmin,async(req,res)=>{
+app.post('/doctor',verifyAdmin,async(req,res)=>{
   const doctor = req.body;
   const result = await doctorsCollection.insertOne(doctor);
   return res.send(result);
 })
 
-app.get('/doctor',verifyJWT,verifyAdmin,async(req,res)=>{
+app.get('/doctor',verifyAdmin,async(req,res)=>{
   const doctor = await doctorsCollection.find().toArray();
   res.send(doctor)
 })
-app.delete('/doctor/:email',verifyJWT,verifyAdmin,async(req,res)=>{
+app.delete('/doctor/:email',verifyAdmin,async(req,res)=>{
   const email = req.params.email;
   const query = {email:email}
   const result = await doctorsCollection.deleteOne(query);
@@ -99,23 +129,6 @@ app.put('/user/:email',async(req,res)=>{
    const token=jwt.sign({email:email},process.env.ACCESS_TOKEN_SECRET);
   res.send({result,token:token});
 })
-//ADMIN ROLL
-app.put('/user/admin/:email',verifyJWT,verifyAdmin,async(req,res)=>{
-  const email = req.params.email;
-    const filter = {email:email};
-    const updateDoc = {
-      $set:{role:"admin"},
-    };
-    const result = await userCollection.updateOne(filter, updateDoc);
-    res.send(result);
- 
-})
-app.get('/admin/:email',async(req,res)=>{
-  const email = req.params.email;
-  const user = await userCollection.findOne({email:email});
-  const isAdmin =user.role==='admin';
-  res.send({admin:isAdmin})
-})
 
 
 /******get user booking information sent backend********/
@@ -132,13 +145,13 @@ app.post('/booking',async(req,res)=>{
   return res.send({success:true,result});
 })
 /******get all booking********/
-app.get('/allbooking',verifyJWT,async(req,res)=>{
+app.get('/allbooking',async(req,res)=>{
   const booking= await  bookingCollection.find().toArray();
   res.send(booking)
 })
 
 /******show per user appoinment by email********/
-app.get('/booking',verifyJWT,async(req,res)=>{
+app.get('/booking',async(req,res)=>{
   const patientEmail = req.query.patientEmail;
   const decodedEmail = req.decoded.email;
   if(patientEmail===decodedEmail){
@@ -151,7 +164,7 @@ app.get('/booking',verifyJWT,async(req,res)=>{
 })
 
 /******booking details by id per user********/
-app.get('/booking/:id',verifyJWT,async(req,res)=>{
+app.get('/booking/:id',async(req,res)=>{
   const id= req.params.id;
   const query={_id:ObjectId(id)};
   const booking = await bookingCollection.findOne(query);
